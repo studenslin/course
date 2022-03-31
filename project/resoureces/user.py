@@ -5,16 +5,14 @@
 import traceback
 import logging
 import json
+import random
 
-from common.utils.login_utils import login_required
 from common.models import db, rds
-from common.cache import cache
+
 from common.utils.jwt_utils import _generate_jwt
 from common.model_fields.user_fields import user_fields
-from common.utils.custom_output_json import custom_output_json
-from common.utils.smstasks import send_message
+from common.celery_tasks.main import send_message
 from common.utils.captcha import Captcha
-
 from io import BytesIO
 
 from flask import Blueprint, g, make_response
@@ -27,27 +25,24 @@ demo_bp = Blueprint('demo', __name__)
 api = Api(demo_bp)
 
 
-# @api.representation('application/json')
-# def output_json(data, code=200, headers=None):
-#     return custom_output_json(data, code, headers)
-
-
 class Sms(Resource):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('phone')
         args = parser.parse_args()
         mobile = args.get('phone')
-        print('mobile', mobile)
-        sms_code = send_message(mobile)
-        sms_json = json.dumps(sms_code)
-        if sms_json[0] == "000000":
-            return {"msg": "连接网络超时", "code": "400"}
+        sms_id = random.randint(100000, 999999)
+        # send_message(mobile, sms_id)
+        sms_code = send_message.delay(mobile, sms_id)
+        rds.setex("sms_%s" % mobile, 60 * 5, sms_id)
+        # sms_json = json.dumps(sms_code)
+        # if sms_json[0] == "000000":
+        #     return {"msg": "连接网络超时", "code": "400"}
         return {"msg": "发送成功", "code": "200"}
 
 
 class ImgCode(Resource):
-    def post(self):
+    def get(self):
         try:
             parser = reqparse.RequestParser()
             parser.add_argument('uuid')
@@ -107,14 +102,22 @@ class Login(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()
-        lis = ['username', 'password']
+        lis = ['username', 'password', 'img_code', 'uuid']
         for i in lis:
             parser.add_argument(i)
         args = parser.parse_args()
         for value in args:
             values = args.get(value)
             if len(values) == 0:
-                return {'code': 500, 'msg': '{} is None'.format(values)}
+                return {'code': 400, 'message': '{} is None'.format(values)}
+        code = rds.get(args.get('uuid'))
+        if code is None:
+            return {'code': 400, 'message': 'Parameter error'}
+        code = code.decode()
+        print(code)
+        img_code = args.get('img_code')
+        if img_code.lower() != code.lower():
+            return {'code': '400', 'message': 'Verification code is not correct'}
         user = User.query.filter_by(account=args.get('username'), password=args.get('password')).first()
         if user:
             user_id = user.uid
@@ -123,9 +126,9 @@ class Login(Resource):
             return {'code': 200, 'data': {
                 'token': token, 'refresh_token': refresh_token,
                 'username': user.account, 'uid': user.uid
-            }}
+            }, 'message': 'login successfully'}
         else:
-            return {'code': 200, 'msg': 'The account or password is incorrect'}
+            return {'code': 400, 'message': 'The account or password is incorrect'}
 
 
 # class UserInfo(Resource):

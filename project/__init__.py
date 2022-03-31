@@ -14,6 +14,7 @@ from project.resoureces.tags import tags_bp
 from flask_cors import CORS
 from flask_restful import Api
 from flask import Flask
+from celery import Celery
 
 
 def create_flask_app(config):

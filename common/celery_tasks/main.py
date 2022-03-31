@@ -1,33 +1,32 @@
 # -*- codeing = utf-8 -*-
-# @Time : 2022/3/30 10:08
+# @Time : 2022/3/31 9:30
 # @Author : linyaxuan
-# @File : smstasks.py
+# @File : main.py
 # @Software : PyCharm
 
-
-# 生成短信验证码
 from __future__ import absolute_import, unicode_literals
 from ronglian_sms_sdk import SmsSDK
-from celery import shared_task
-import random
-from common.models import rds
-from common.celery_tasks.main import celery_app
 
+from celery import Celery
+
+celery_app = Celery('mycelery',
+                    broker='redis://127.0.0.1:6379/12',  # 任务存放的地方
+                    backend='redis://127.0.0.1:6379/13',  # 结果存放的地方
+                    include=['smstasks'])
 
 accId = "8aaf07087d55e4d9017d6fc4081d0576"
 accToken = "ad66fb53f02949d7bb95c29125a28c5c"
 appId = "8a216da87de15752017dff9ef8c806aa"
 
 
-# @shared_task
-@celery_app.task(name='common.utils.smstasks')
+@celery_app.task(name='celery_tasks.smstasks')
 def send_message(mobile, sms_id):
     sdk = SmsSDK(accId, accToken, appId)
     tid = '1'
-    print(sms_id)
-    # sms_id = random.randint(100000, 999999)
     datas = (sms_id,)
-    rds.setex("sms_%s" % mobile, 60 * 5, sms_id)
     resp = sdk.sendMessage(tid, mobile, datas)
     print(resp)
     return resp
+# @celery_app.task(bind=True)
+# def debug_task(self):
+#     print('Request: {0!r}'.format(self.request))
