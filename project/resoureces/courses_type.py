@@ -59,7 +59,7 @@ class CourseTypeCRUD(Resource):
 
     def get(self):
         try:
-            course_list = CourseType.query.all()
+            course_list = CourseType.query.order_by().all()
             return marshal(course_list, course_fields)
         except:
             error = traceback.format_exc()
@@ -104,4 +104,4 @@ class CourseTypeCRUD(Resource):
         return {'code': 500, 'msg': 'Parameter error'}
 
 
-api.add_resource(CourseTypeCRUD, '/course/crud', endpoint='course')
+api.add_resource(CourseTypeCRUD, '/course_type', endpoint='course')

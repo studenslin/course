@@ -10,9 +10,9 @@ class Config(object):
     """
     数据库的配置
     """
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:linyaxuan666@127.0.0.1:3306/course'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:linyaxuan666@127.0.0.1:3306/flask_course'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ECHO = True
+    SQLALCHEMY_ECHO = False
 
     """
     缓存配置

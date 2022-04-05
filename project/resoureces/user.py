@@ -2,22 +2,30 @@
 # @Author : linyaxuan
 # @File : user.py
 # @Software : PyCharm
+import base64
+import hmac
+import time
 import traceback
 import logging
 import json
 import random
+import urllib
+from hashlib import sha256
+
+import requests
 
 from common.models import db, rds
-
+from common.utils.login_utils import login_required
 from common.utils.jwt_utils import _generate_jwt
 from common.model_fields.user_fields import user_fields
 from common.celery_tasks.main import send_message
 from common.utils.captcha import Captcha
 from io import BytesIO
 
-from flask import Blueprint, g, make_response
+from flask import Blueprint, g, make_response, request
 from flask_restful import Resource, reqparse, Api, marshal
-from common.models.model import User, Vip
+from common.models.model import User, Vip, OtherUser
+from sqlalchemy import or_, and_
 
 # 创建蓝图
 demo_bp = Blueprint('demo', __name__)
@@ -95,14 +103,18 @@ class Register(Resource):
         return marshal(user, user_fields)
 
 
+from common.utils.smstasks import verify_img_code
+
+
 class Login(Resource):
     """
     登录
     """
 
+    @verify_img_code
     def post(self):
         parser = reqparse.RequestParser()
-        lis = ['username', 'password', 'img_code', 'uuid']
+        lis = ['username', 'password']
         for i in lis:
             parser.add_argument(i)
         args = parser.parse_args()
@@ -110,72 +122,136 @@ class Login(Resource):
             values = args.get(value)
             if len(values) == 0:
                 return {'code': 400, 'message': '{} is None'.format(values)}
-        code = rds.get(args.get('uuid'))
-        if code is None:
-            return {'code': 400, 'message': 'Parameter error'}
-        code = code.decode()
-        print(code)
-        img_code = args.get('img_code')
-        if img_code.lower() != code.lower():
-            return {'code': '400', 'message': 'Verification code is not correct'}
-        user = User.query.filter_by(account=args.get('username'), password=args.get('password')).first()
+        # code = rds.get(args.get('uuid'))
+        # if code is None:
+        #     return {'code': 400, 'message': 'Parameter error'}
+        # code = code.decode()
+        # img_code = args.get('img_code')
+        # if img_code.lower() != code.lower():
+        #     return {'code': '400', 'message': 'Verification code is not correct'}
+        account = args.get('username')
+        print(account)
+        print(args.get('password'))
+        user = User.query.filter(and_(or_(User.account == account, User.phone == account),
+                                      User.password == args.get('password'))).first()
         if user:
             user_id = user.uid
             # 生成 token
             token, refresh_token = _generate_jwt(user_id)
             return {'code': 200, 'data': {
                 'token': token, 'refresh_token': refresh_token,
-                'username': user.account, 'uid': user.uid
+                'username': user.account, 'uid': user.uid,
+                'img': user.img
             }, 'message': 'login successfully'}
         else:
             return {'code': 400, 'message': 'The account or password is incorrect'}
 
 
-# class UserInfo(Resource):
-#     """
-#     获取所有用户信息
-#     """
-#
-#     @cache.cached(timeout=60)
-#     @login_required
-#     def get(self):
-#         try:
-#             uid = g.user_id
-#             info = User.query.get(uid)
-#             return marshal(info, user_fields)
-#         except:
-#             return {'code': 500, 'msg': 'err'}
+class OAuth(Resource):
+    """
+    钉钉回调
+    """
+
+    def get(self):
+        # code = request.GET.get("code")
+        parser = reqparse.RequestParser()
+        parser.add_argument('code')
+        args = parser.parse_args()
+        code = args.get('code')
+        t = time.time()
+        # 时间戳
+        timestamp = str((int(round(t * 1000))))
+        appSecret = 'Fcah25vIw-koApCVN0mGonFwT2nSze14cEe6Fre8i269LqMNvrAdku4HRI2Mu9VK'
+        # 构造签名
+        signature = base64.b64encode(
+            hmac.new(appSecret.encode('utf-8'), timestamp.encode('utf-8'), digestmod=sha256).digest())
+        # 请求接口，换取钉钉用户名
+        payload = {'tmp_auth_code': code}
+        headers = {'Content-Type': 'application/json'}
+        res = requests.post('https://oapi.dingtalk.com/sns/getuserinfo_bycode?signature=' + urllib.parse.quote(
+            signature.decode("utf-8")) + "&timestamp=" + timestamp + "&accessKey=dingoajf8cqgyemqarekhr",
+                            data=json.dumps(payload), headers=headers)
+        res_dict = json.loads(res.text)
+        unid = res_dict['user_info']['unionid']
+        unid = unid[0:12]
+        if not unid:
+            return {'code': 500, 'msg': res_dict['errmsg']}
+        other_user = OtherUser.query.filter_by(unid=unid).first()
+        if other_user:
+            if other_user.user:
+                user = other_user.user
+                user = User.query.get(user)
+                # 生成 token
+                token, refresh_token = _generate_jwt(user.uid)
+                return {'code': 200, 'data': {
+                    'token': token, 'refresh_token': refresh_token,
+                    'username': user.account, 'uid': user.uid,
+                    'img': user.img
+                }, 'message': 'login successfully'}
+        return {'code': 201, 'data': {'unid': unid}}
+
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('unid')
+        parser.add_argument('phone')
+        parser.add_argument('sms_code')
+        args = parser.parse_args()
+        phone = args.get('phone')
+        sms_code = args.get('sms_code')
+        unid = args.get('unid')
+        rds_code = rds.get('sms_{}'.format(phone))
+        if sms_code != rds_code.decode():
+            return {'code': 400, 'msg': 'Parameter error'}
+        user = User.query.filter_by(phone=phone).first()
+        if user:
+            other_user = OtherUser()
+            other_user.unid = unid
+            other_user.user = user.uid
+            other_user.auth_type = '钉钉'
+            user_id = user.uid
+            db.session.add(other_user)
+            db.session.commit()
+            # 生成 token
+            token, refresh_token = _generate_jwt(user_id)
+            return {'code': 200, 'data': {
+                'token': token, 'refresh_token': refresh_token,
+                'username': user.account, 'uid': user.uid,
+                'img': user.img
+            }, 'message': 'login successfully'}
+        else:
+            return {'code': 400, 'message': 'The account or password is incorrect'}
 
 
-# class UserVip(Resource):
-#     """
-#     修改vip 等级
-#     """
-#
-#     @login_required
-#     def post(self):
-#         uid = g.user_id
-#         user = User.query.get(uid)
-#         if user.is_superuser != 2:
-#             return {'code': 403, 'msg': 'This user does not have permission'}
-#         parser = reqparse.RequestParser()
-#         parser.add_argument('id', type=int)
-#         parser.add_argument('vip_id', type=int)
-#         args = parser.parse_args()
-#         id = args.get('id')
-#         vip_id = args.get('vip')
-#         user = User.query.get(id)
-#         if user:
-#             if Vip.query.get(vip_id):
-#                 user.vip = vip_id
-#                 db.session.commit()
-#             return marshal(user, user_fields)
-#         return {'code': 400, 'msg': 'Parameter error'}
+class UserInfo(Resource):
+    """
+    获取用户信息
+    """
+    # @login_required
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('uid')
+        args = parser.parse_args()
+        uid = args.get('uid')
+        if uid:
+            user = User.query.get(uid)
+            return {'code': 200, 'data': {
+                'img': user.img, 'username': user.account
+            }}
+
+
+from common.utils.qny import qn_token
+
+
+class QiniuToken(Resource):
+    def get(self):
+        token = qn_token()
+        return {"token": token}
 
 
 api.add_resource(Register, '/register')
 api.add_resource(Login, '/login')
-# api.add_resource(UserInfo, '/user_info')
-# api.add_resource(UserVip, '/put/user_level')
 api.add_resource(Sms, '/sms_code')
 api.add_resource(ImgCode, '/img_code')
+api.add_resource(OAuth, '/dingding_back')
+api.add_resource(UserInfo, '/user_info')
+api.add_resource(QiniuToken, '/get_qnToken')

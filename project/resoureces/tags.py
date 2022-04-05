@@ -59,7 +59,7 @@ class TagsCRUD(Resource):
 
     def get(self):
         try:
-            tag_list = Tag.query.all()
+            tag_list = Tag.query.order_by().all()
             return marshal(tag_list, tag_fields)
         except:
             error = traceback.format_exc()
@@ -104,4 +104,4 @@ class TagsCRUD(Resource):
         return {'code': 500, 'msg': 'Parameter error'}
 
 
-api.add_resource(TagsCRUD, '/tags/crud')
+api.add_resource(TagsCRUD, '/tags')

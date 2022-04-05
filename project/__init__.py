@@ -10,6 +10,7 @@ from project.resoureces.user import demo_bp
 from project.resoureces.courses_type import course_type_bp
 from project.resoureces.course import course_bp
 from project.resoureces.tags import tags_bp
+from project.resoureces.section import section_bp
 
 from flask_cors import CORS
 from flask_restful import Api
@@ -25,9 +26,12 @@ def create_flask_app(config):
     app.register_blueprint(course_bp)
     app.register_blueprint(tags_bp)
     app.register_blueprint(course_type_bp)
+    app.register_blueprint(section_bp)
 
     db.init_app(app)
     cache.init_app(app)
     CORS(app, resources={r"/*/*": {"origins": "*"}})
     Api(app)
     return app
+
+

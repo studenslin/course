@@ -12,7 +12,7 @@ from celery import Celery
 celery_app = Celery('mycelery',
                     broker='redis://127.0.0.1:6379/12',  # 任务存放的地方
                     backend='redis://127.0.0.1:6379/13',  # 结果存放的地方
-                    include=['smstasks'])
+                    )
 
 accId = "8aaf07087d55e4d9017d6fc4081d0576"
 accToken = "ad66fb53f02949d7bb95c29125a28c5c"
@@ -27,6 +27,4 @@ def send_message(mobile, sms_id):
     resp = sdk.sendMessage(tid, mobile, datas)
     print(resp)
     return resp
-# @celery_app.task(bind=True)
-# def debug_task(self):
-#     print('Request: {0!r}'.format(self.request))
+
