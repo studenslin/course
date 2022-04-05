@@ -104,31 +104,223 @@ class Section(db.Model):
     cid = db.Column(db.Integer, db.ForeignKey("course.id"))
 
 
-class QuestionType(db.Model):
-    """
-    帖子分类
-    """
-    __tablename__ = 'question_type'
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.String(32), doc='帖子分类(实验评论,实验报告,实验问答)')
-
-
-class Question(db.Model):
-    """
-    帖子
-    """
-    __tablename__ = 'question'
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text, doc='帖子内容')
-    type = db.Column(db.Integer, db.ForeignKey("question_type.id"), primary_key=True, doc='类别id')
-    uid = db.Column(db.Integer, doc='发布人')
-    cid = db.Column(db.Integer, doc='课程id')
-    sid = db.Column(db.Integer, doc='章节id')
-    top = db.Column(db.Integer, doc='位置')
-    excellent = db.Column(db.Integer, doc='精品(值大的是)')
-    examine = db.Column(db.Integer, doc='查看总数')
-    favorite = db.Column(db.Integer, doc='收藏总数')
-
-
-
+# class QuestionType(db.Model):
+#     """
+#     帖子分类
+#     """
+#     __tablename__ = 'question_type'
+#     id = db.Column(db.Integer, primary_key=True)
+#     type = db.Column(db.String(32), doc='帖子分类(实验评论,实验报告,实验问答)')
+#
+#
+# class Question(db.Model):
+#     """
+#     帖子
+#     """
+#     __tablename__ = 'question'
+#     id = db.Column(db.Integer, primary_key=True)
+#     content = db.Column(db.Text, doc='帖子内容')
+#     type = db.Column(db.Integer, db.ForeignKey("question_type.id"), primary_key=True, doc='类别id')
+#     uid = db.Column(db.Integer, doc='发布人')
+#     cid = db.Column(db.Integer, doc='课程id')
+#     sid = db.Column(db.Integer, doc='章节id')
+#     top = db.Column(db.Integer, doc='位置')
+#     excellent = db.Column(db.Integer, doc='精品(值大的是)')
+#     examine = db.Column(db.Integer, doc='查看总数')
+#     favorite = db.Column(db.Integer, doc='收藏总数')
+#     create_time = db.Column(db.DateTime, default=datetime.now())
+#     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
+#
+#
+# class Comment(db.Model):
+#     """
+#     评论&回复表
+#     """
+#     __tablename__ = 'comment'
+#     id = db.Column(db.Integer, primary_key=True)
+#     content = db.Column(db.String(500), doc='评论或回复内容')
+#     uid = db.Column(db.Integer, doc='评论人或回复人')
+#     q_id = db.Column(db.Integer, doc='所属帖子')
+#     reply = db.Column(db.Integer, null=True, doc='自关联回复人')
+#     favorite = db.Column(db.Integer, default=0, doc='点赞总数')
+#     create_time = db.Column(db.DateTime, default=datetime.now())
+#     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
+#
+#
+# class Favorite(db.Model):
+#     """
+#     点赞表
+#     """
+#     __tablename__ = 'favorite'
+#     id = db.Column(db.Integer, primary_key=True)
+#     uid = db.Column(db.Integer, doc='点赞用户')
+#     com_id = db.Column(db.Integer, doc='评论或回复id')
+#     receive_id = db.Column(db.Integer, doc='收赞用户')
+#     create_time = db.Column(db.DateTime, default=datetime.now())
+#     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
+#
+#
+# class Report(db.Model):
+#     """
+#     报告表
+#     """
+#     __tablename__ = 'report'
+#     id = db.Column(db.Integer, primary_key=True)
+#     sid = db.Column(db.Integer, doc='所属章节')
+#     uid = db.Column(db.Integer)
+#     content = db.Column(db.Text, doc='报告内容')
+#     create_time = db.Column(db.DateTime, default=datetime.now())
+#     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
+#
+#
+# class Path(db.Model):
+#     """
+#     路径表
+#     """
+#     __tablename__ = 'path'
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(300), doc='路径名')
+#     img = db.Column(db.String(900), doc='路径头图')
+#     desc = db.Column(db.String(500), doc='路径简介')
+#     section_sum = db.Column(db.Integr, doc='总章节数')
+#     add_sum = db.Column(db.Integer, default=0, doc='添加人数')
+#     study_time = db.Column(db.Integer, default=0, doc='预计学习时长（单位：分钟）')
+#     create_time = db.Column(db.DateTime, default=datetime.now())
+#     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
+#
+#
+# class Stage(db.Model):
+#     """
+#     路径阶段表
+#     """
+#     __tablename__ = 'stage'
+#     id = db.Column(db.Integer, primary_key=True)
+#     pid = db.Column(db.Integer, doc='路径id')
+#     stage = db.Column(db.String(200), doc='阶段（如：第一阶段、第二阶段')
+#     stage_name = db.Column(db.String(200), doc='阶段名（如：基础知识、编程语言）')
+#     create_time = db.Column(db.DateTime, default=datetime.now())
+#     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
+#
+#
+# class StageCourse(db.Model):
+#     """
+#     阶段课程表
+#     """
+#     __tablename__ = 'stage_course'
+#     id = db.Column(db.Integer, primary_key=True)
+#     stage_id = db.Column(db.Integer, doc='阶段id')
+#     cid = db.Column(db.Integer, doc='课程id')
+#     create_time = db.Column(db.DateTime, default=datetime.now())
+#     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
+#
+#
+# class PathUser(db.Model):
+#     """
+#     路径收藏表
+#     """
+#     __tablename__ = 'path_user'
+#     id = db.Column(db.Integer, primary_key=True)
+#     uid = db.Column(db.Integer)
+#     create_time = db.Column(db.DateTime, default=datetime.now())
+#     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
+#
+#
+# class SecKill(db.Model):
+#     """
+#     秒杀活动表
+#     """
+#     __tablename__ = 'sec_kill'
+#     id = db.Column(db.Integer, primary_key=True)
+#     title = db.Column(db.String(100), doc='标题')
+#     start_time = db.Column(db.DateTime)
+#     end_time = db.Column(db.DateTime)
+#     img = db.Column(db.String(100))
+#     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
+#
+#
+# class SecCourse(db.Model):
+#     """
+#     秒杀-课程关系表
+#     """
+#     __tablename__ = 'sec_course'
+#     id = db.Column(db.Integer, primary_key=True)
+#     sid = db.Column(db.Integer)
+#     cid = db.Column(db.Integer)
+#
+# # 优惠券表
+# class Coupon(Base):
+#     coupon = models.CharField(max_length=200)
+#     uid = models.IntegerField()
+#     price = models.IntegerField()
+#     end_time = models.DateTimeField(null=True)
+#     title = models.CharField(max_length=30, null=True)
+#     img = models.CharField(max_length=200, default="coupon.jpg")
+#
+#     class Meta:
+#         db_table = 'coupon'
+#
+#
+# # 订单表
+# class Order(Base):
+#     uid = models.IntegerField()  # 购买用户
+#     order = models.CharField(max_length=16)  # 订单号
+#     price = models.IntegerField()  # 消费价格
+#     behoof = models.CharField(max_length=200, null=True)  # 消费记录
+#     is_succeed = models.IntegerField(default=0)  # 是否支付成功
+#
+#     class Meta:
+#         db_table = "order"
+#
+#
+# # 会员表
+# class VIP(Base):
+#     grade = models.CharField(max_length=20, null=True)  # 会员等级（普通会员、高级会员）
+#     price = models.IntegerField(null=True)  # 会员价格（单位：分）
+#     exempt_cour = models.IntegerField(null=True)  # 免费课程   {0或空:不享受,1:享受}
+#     vip_cour = models.IntegerField(null=True)  # 会员课程   {0或空:不享受,1:享受}
+#     environment = models.IntegerField(null=True)  # 实验环境联网   {0或空:不享受,1:享受}
+#     save = models.IntegerField(null=True)  # 保存2个环境(30天)   {0或空:不享受,1:享受}
+#     client = models.IntegerField(null=True)  # 客户端     {0或空:不享受,1:享受}
+#     ssh = models.IntegerField(null=True)  # SSH直连   {0或空:不享受,1:享受}
+#     webide = models.IntegerField(null=True)  # WebIDE    {0或空:不享受,1:享受}
+#     discounts = models.IntegerField(null=True)  # 训练营优惠   {0或空:不享受,1:享受}
+#     exempt_study = models.IntegerField(null=True)  # 训练营课程免费学习   {0或空:不享受,1:享受}
+#
+#     class Meta:
+#         db_table = "vip"
+#
+#
+# # 收藏表
+# class Collection(Base):
+#     uid = models.IntegerField()  # 用户id
+#     iid = models.IntegerField()  # 帖子id
+#
+#     class Meta:
+#         db_table = "collection"
+#
+#
+# # 关注表
+# class Follow(Base):
+#     uid = models.IntegerField()  # 用户id
+#     cid = models.IntegerField()  # 课程id
+#
+#     class Meta:
+#         db_table = "follow"
+#
+#
+# # 已学表
+# class Learn(Base):
+#     uid = models.IntegerField()  # 用户id
+#     cid = models.IntegerField()  # 课程id
+#     sid = models.IntegerField()  # 章节id
+#
+#     class Meta:
+#         db_table = "learn"
+#
+#
+# # 已购买表
+# class Buy(Base):
+#     uid = models.IntegerField()  # 用户id
+#     cid = models.IntegerField()  # 课程id
+#
 
