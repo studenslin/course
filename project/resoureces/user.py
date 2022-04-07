@@ -10,10 +10,11 @@ import logging
 import json
 import random
 import urllib
+import requests
 from hashlib import sha256
 
-import requests
-
+from common.utils.smstasks import verify_img_code
+from common.utils.qny import qn_token
 from common.models import db, rds
 from common.utils.login_utils import login_required
 from common.utils.jwt_utils import _generate_jwt
@@ -103,9 +104,6 @@ class Register(Resource):
         return marshal(user, user_fields)
 
 
-from common.utils.smstasks import verify_img_code
-
-
 class Login(Resource):
     """
     登录
@@ -147,7 +145,7 @@ class Login(Resource):
             return {'code': 400, 'message': 'The account or password is incorrect'}
 
 
-class OAuth(Resource):
+class OAuthDingding(Resource):
     """
     钉钉回调
     """
@@ -222,10 +220,37 @@ class OAuth(Resource):
             return {'code': 400, 'message': 'The account or password is incorrect'}
 
 
+class OAuthWeibo(Resource):
+    """
+    weibo_callback
+    """
+
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('code')
+        args = parser.parse_args()
+        code = args.get('code')
+        # 微博认证地址
+        access_token_url = "https://api.weibo.com/oauth2/access_token"
+        # 返回参数
+        # 参数
+        res = requests.post(
+            access_token_url,
+            data={
+                "client_id": '4070074327',
+                "client_secret": "18e4a3d9b6c6ad4cce096ca2910beed6",
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": "http://127.0.0.1:8000/weibo/"
+            }
+        )
+
+
 class UserInfo(Resource):
     """
     获取用户信息
     """
+
     # @login_required
     def get(self):
         parser = reqparse.RequestParser()
@@ -239,9 +264,6 @@ class UserInfo(Resource):
             }}
 
 
-from common.utils.qny import qn_token
-
-
 class QiniuToken(Resource):
     def get(self):
         token = qn_token()
@@ -252,6 +274,6 @@ api.add_resource(Register, '/register')
 api.add_resource(Login, '/login')
 api.add_resource(Sms, '/sms_code')
 api.add_resource(ImgCode, '/img_code')
-api.add_resource(OAuth, '/dingding_back')
+api.add_resource(OAuthDingding, '/dingding_back')
 api.add_resource(UserInfo, '/user_info')
 api.add_resource(QiniuToken, '/get_qnToken')

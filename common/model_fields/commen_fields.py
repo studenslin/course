@@ -1,9 +1,8 @@
 # -*- codeing = utf-8 -*-
-# @Time : 2022/3/29 15:30
+# @Time : 2022/4/6 15:29
 # @Author : linyaxuan
-# @File : user_fields.py
+# @File : commen_fields.py
 # @Software : PyCharm
-
 
 from flask_restful import fields
 
@@ -35,29 +34,15 @@ class CustomDate(fields.DateTime):
             raise Exception('Unsupported date format %s' % self.dt_format)
 
 
-user_fields = {
+comment_fields = {
     'id': fields.Integer,
-    'account': fields.String,
-    'nick_name': fields.String,
-    'password': fields.String,
-    'phone': fields.String,
-    'last_login_time': CustomDate(dt_format='strftime'),
-    'ctime': CustomDate(dt_format='strftime'),
-}
-
-vip_fields = {
-    'title': fields.String,
-    'level': fields.Integer,
-    'price': fields.Price,
-    'desc': fields.String,
-    'period': fields.Integer,
-    'exempt_cour': fields.Integer,
-    'vip_cour': fields.Integer,
-    'environment': fields.Integer,
-    'save': fields.Integer,
-    'client': fields.Integer,
-    'ssh': fields.Integer,
-    'web_ide': fields.Integer,
-    'discounts': fields.Integer,
-    'exempt_study': fields.Integer
+    'content': fields.String,
+    'uid': fields.Integer,
+    'cid': fields.Integer,
+    'sid': fields.Integer,
+    'reply': fields.Integer,
+    'top': fields.Integer,
+    'excellent': fields.Integer,
+    'favorite': fields.Integer,
+    'create_time': CustomDate(dt_format='strftime'),
 }

@@ -129,10 +129,10 @@ class GetCourse(Resource):
             if courses:
                 num = Course.query.count()
                 start = (page - 1) * size
-                end = page * size if num > page * size else page * size
+                end = page * size if num > page * size else num
                 courses = courses[start:end]
                 return marshal(courses, courses_fields)
-            return {'code': 400, 'msg': 'Parameter error'}
+            return {'code': 200, 'data': []}
         if free != '' and online != '' and tag_id != '':
             course_tag = CourseTag.query.filter_by(tid=tag_id).first()
             if course_tag:
@@ -140,10 +140,10 @@ class GetCourse(Resource):
                 courses = Course.query.filter_by(course_type=free, status=online, id=cid).order_by(Course.learner).all()
                 num = len(courses)
                 start = (page - 1) * size
-                end = page * size if num > page * size else page * size
+                end = page * size if num > page * size else num
                 courses = courses[start:end]
                 return marshal(courses, courses_fields)
-            return {'code': 400, 'msg': 'Parameter error'}
+            return {'code': 200, 'data': []}
         if free == '' and online != '' and tag_id != '':
             course_tag = CourseTag.query.filter_by(tid=tag_id).first()
             if course_tag:
@@ -151,19 +151,19 @@ class GetCourse(Resource):
                 courses = Course.query.filter_by(status=online, id=cid).order_by(Course.learner).all()
                 num = len(courses)
                 start = (page - 1) * size
-                end = page * size if num > page * size else page * size
+                end = page * size if num > page * size else num
                 courses = courses[start:end]
                 return marshal(courses, courses_fields)
-            return {'code': 400, 'msg': 'Parameter error'}
+            return {'code': 200, 'data': []}
         if free != '' and online != '' and tag_id == '':
             courses = Course.query.filter_by(course_type=free, status=online).order_by(Course.learner).all()
             if courses:
                 num = len(courses)
                 start = (page - 1) * size
-                end = page * size if num > page * size else page * size
+                end = page * size if num > page * size else num
                 courses = courses[start:end]
                 return marshal(courses, courses_fields)
-            return {'code': 400, 'msg': 'Parameter error'}
+            return {'code': 200, 'data': []}
         if free != '' and online == '' and tag_id != '':
             course_tag = CourseTag.query.filter_by(tid=tag_id).first()
             if course_tag:
@@ -171,28 +171,28 @@ class GetCourse(Resource):
                 courses = Course.query.filter_by(course_type=free, id=cid).order_by(Course.learner).all()
                 num = len(courses)
                 start = (page - 1) * size
-                end = page * size if num > page * size else page * size
+                end = page * size if num > page * size else num
                 courses = courses[start:end]
                 return marshal(courses, courses_fields)
-            return {'code': 400, 'msg': 'Parameter error'}
+            return {'code': 200, 'data': []}
         if free == '' and online != '' and tag_id == '':
             courses = Course.query.filter_by(status=online).order_by(Course.learner).all()
             if courses:
                 num = len(courses)
                 start = (page - 1) * size
-                end = page * size if num > page * size else page * size
+                end = page * size if num > page * size else num
                 courses = courses[start:end]
                 return marshal(courses, courses_fields)
-            return {'code': 400, 'msg': 'Parameter error'}
+            return {'code': 200, 'data': []}
         if free != '' and online == '' and tag_id == '':
             courses = Course.query.filter_by(course_type=free).order_by(Course.learner).all()
             if courses:
                 num = len(courses)
                 start = (page - 1) * size
-                end = page * size if num > page * size else page * size
+                end = page * size if num > page * size else num
                 courses = courses[start:end]
                 return marshal(courses, courses_fields)
-            return {'code': 400, 'msg': 'Parameter error'}
+            return {'code': 200, 'data': []}
         if free == '' and online == '' and tag_id != '':
             course_tag = CourseTag.query.filter_by(tid=tag_id).first()
             if course_tag:
@@ -200,10 +200,10 @@ class GetCourse(Resource):
                 courses = Course.query.filter_by(id=cid).order_by(Course.learner).all()
                 num = len(courses)
                 start = (page - 1) * size
-                end = page * size if num > page * size else page * size
+                end = page * size if num > page * size else num
                 courses = courses[start:end]
                 return marshal(courses, courses_fields)
-            return {'code': 400, 'msg': 'Parameter error'}
+            return {'code': 200, 'data': []}
         # return {'code': 400, 'msg': 'Parameter error'}
 
 

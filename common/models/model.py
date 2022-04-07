@@ -31,9 +31,19 @@ class Vip(db.Model):
     __tablename__ = 'vip'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(32), doc='vip名称')
-    level = db.Column(db.Integer, doc='vip等级')
+    level = db.Column(db.Integer, doc='vip等级(普通会员,高级会员)')
+    price = db.Column(db.DECIMAL(20, 2), doc='会员价格')
     desc = db.Column(db.String(64), doc='vip描述')
     period = db.Column(db.Integer, default=365, doc='vip有效期')
+    exempt_cour = db.Column(db.Integer, doc='免费课程{0或空:不享受,1:享受}')
+    vip_cour = db.Column(db.Integer, doc='会员课程{0或空:不享受,1:享受}')
+    environment = db.Column(db.Integer, doc='实验环境联网{0或空:不享受,1:享受}')
+    save = db.Column(db.Integer, doc='保存2个环境(30天){0或空:不享受,1:享受}')
+    client = db.Column(db.Integer, doc='客户端{0或空:不享受,1:享受}')
+    ssh = db.Column(db.Integer, doc='SSH直连{0或空:不享受,1:享受}')
+    web_ide = db.Column(db.Integer, doc='WebIDE {0或空:不享受,1:享受}')
+    discounts = db.Column(db.Integer, doc='训练营优惠{0或空:不享受,1:享受}')
+    exempt_study = db.Column(db.Integer, doc='训练营课程免费学习{0或空:不享受,1:享受}')
 
 
 class OtherUser(db.Model):
@@ -104,6 +114,75 @@ class Section(db.Model):
     cid = db.Column(db.Integer, db.ForeignKey("course.id"))
 
 
+class Comment(db.Model):
+    """
+    评论&回复表
+    """
+    __tablename__ = 'comment'
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, doc='评论或回复内容')
+    uid = db.Column(db.Integer, doc='评论人或回复人')
+    cid = db.Column(db.Integer, doc='课程id')
+    sid = db.Column(db.Integer, doc='章节id')
+    reply = db.Column(db.Integer, doc='自关联回复人')
+    top = db.Column(db.Integer, doc='位置')
+    excellent = db.Column(db.Integer, doc='精华(值大的是)')
+    favorite = db.Column(db.Integer, doc='收藏总数')
+    create_time = db.Column(db.DateTime, default=datetime.now())
+    is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
+
+
+class Learn(db.Model):
+    """
+    学习状态表
+    """
+    __tablename__ = 'learning'
+    id = db.Column(db.Integer, primary_key=True)
+    uid = db.Column(db.Integer, doc='用户id')
+    cid = db.Column(db.Integer, doc='课程id')
+    sid = db.Column(db.Integer, doc='章节id')
+
+
+class Goods(db.Model):
+    """
+    商品表
+    """
+    __tablename__ = 'goods'
+    id = db.Column(db.Integer, primary_key=True)
+    course = db.Column(db.Integer, db.ForeignKey('course.id'))
+    good_type = db.Column(db.Integer, db.ForeignKey('course_type.id'))
+    title = db.Column(db.String(24), doc='商品名称')
+    price = db.Column(db.DECIMAL(20, 2), doc='商品价格')
+    channel_type = db.Column(db.String(32), doc='普通/促销')
+    period = db.Column(db.Integer, default=365, doc='有效期')
+    is_launched = db.Column(db.Integer, default=0, doc='是否上架')
+
+
+class Orders(db.Model):
+    """
+    订单表
+    """
+    __tablename__ = 'orders'
+    order = db.Column(db.String(32), doc='订单号', primary_key=True)
+    user = db.Column(db.Integer, db.ForeignKey('user.uid'))
+    goods = db.Column(db.Integer, db.ForeignKey('goods.id'))
+    trade_no = db.Column(db.String(32), doc='支付宝订单号')
+    pay_time = db.Column(db.DateTime, default=datetime.now())
+    pay_method = db.Column(db.String(32), doc='支付方式(微信/支付宝)')
+    status = db.Column(db.String(32), doc='待支付/已支付/已取消')
+    total = db.Column(db.DECIMAL(20, 2), doc='支付总金额')
+    pay = db.Column(db.DECIMAL(20, 2), doc='实际支付金额')
+
+
+class UserCourse(db.Model):
+    """
+    用户已购表
+    """
+    __tablename__ = 'user_course'
+    id = db.Column(db.Integer, primary_key=True)
+    user = db.Column(db.Integer, db.ForeignKey('user.uid'))
+    course = db.Column(db.Integer, db.ForeignKey('course.id'))
+
 # class QuestionType(db.Model):
 #     """
 #     帖子分类
@@ -111,8 +190,8 @@ class Section(db.Model):
 #     __tablename__ = 'question_type'
 #     id = db.Column(db.Integer, primary_key=True)
 #     type = db.Column(db.String(32), doc='帖子分类(实验评论,实验报告,实验问答)')
-#
-#
+
+
 # class Question(db.Model):
 #     """
 #     帖子
@@ -120,7 +199,7 @@ class Section(db.Model):
 #     __tablename__ = 'question'
 #     id = db.Column(db.Integer, primary_key=True)
 #     content = db.Column(db.Text, doc='帖子内容')
-#     type = db.Column(db.Integer, db.ForeignKey("question_type.id"), primary_key=True, doc='类别id')
+#     type = db.Column(db.Integer,  doc='帖子类别id')
 #     uid = db.Column(db.Integer, doc='发布人')
 #     cid = db.Column(db.Integer, doc='课程id')
 #     sid = db.Column(db.Integer, doc='章节id')
@@ -130,23 +209,6 @@ class Section(db.Model):
 #     favorite = db.Column(db.Integer, doc='收藏总数')
 #     create_time = db.Column(db.DateTime, default=datetime.now())
 #     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
-#
-#
-# class Comment(db.Model):
-#     """
-#     评论&回复表
-#     """
-#     __tablename__ = 'comment'
-#     id = db.Column(db.Integer, primary_key=True)
-#     content = db.Column(db.String(500), doc='评论或回复内容')
-#     uid = db.Column(db.Integer, doc='评论人或回复人')
-#     q_id = db.Column(db.Integer, doc='所属帖子')
-#     reply = db.Column(db.Integer, null=True, doc='自关联回复人')
-#     favorite = db.Column(db.Integer, default=0, doc='点赞总数')
-#     create_time = db.Column(db.DateTime, default=datetime.now())
-#     is_delete = db.Column(db.Integer, default=0, doc='(0,未删除),(1,已经删除)逻辑删除')
-#
-#
 # class Favorite(db.Model):
 #     """
 #     点赞表
@@ -323,4 +385,3 @@ class Section(db.Model):
 #     uid = models.IntegerField()  # 用户id
 #     cid = models.IntegerField()  # 课程id
 #
-

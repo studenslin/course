@@ -14,6 +14,7 @@ def jwt_authentication():
     token = request.headers.get('Authorization')
     if token is not None:
         token = token[4:]
+        print(token)
         # 验证 token
         payload = verify_jwt(token)
         # 保存到 g 对象
