@@ -169,9 +169,10 @@ class Orders(db.Model):
     trade_no = db.Column(db.String(32), doc='支付宝订单号')
     pay_time = db.Column(db.DateTime, default=datetime.now())
     pay_method = db.Column(db.String(32), doc='支付方式(微信/支付宝)')
-    status = db.Column(db.String(32), doc='待支付/已支付/已取消')
+    status = db.Column(db.String(32), doc='0待支付/1已支付/2已取消')
     total = db.Column(db.DECIMAL(20, 2), doc='支付总金额')
     pay = db.Column(db.DECIMAL(20, 2), doc='实际支付金额')
+    record = db.Column(db.String(32), doc='消费记录')
 
 
 class UserCourse(db.Model):
@@ -182,6 +183,39 @@ class UserCourse(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user = db.Column(db.Integer, db.ForeignKey('user.uid'))
     course = db.Column(db.Integer, db.ForeignKey('course.id'))
+
+
+class Path(db.Model):
+    """
+    路径表
+    """
+    __tablename__ = 'path'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(32), doc='路径名')
+    img = db.Column(db.String(888), doc='图片')
+    desc = db.Column(db.String(100), doc='路径描述')
+    section_sum = db.Column(db.Integer, doc='总章节数')
+    add_sum = db.Column(db.Integer, doc='添加人数')
+    study_time = db.Column(db.Integer, doc='预计学习时长')
+
+
+class Stage(db.Model):
+    """
+    路径阶段表
+    """
+    __tablename__ = 'stage'
+    id = db.Column(db.Integer, primary_key=True)
+    stage = db.Column(db.String(64), doc='阶段')
+    stage_name = db.Column(db.String(64), doc='阶段名')
+    path = db.Column(db.Integer, db.ForeignKey('path.id'), doc='路径')
+    courses = db.relationship('Course', secondary='course_stage', backref=db.backref('stage'))
+
+
+class CourseStage(db.Model):
+    __tablename__ = 'course_stage'
+    course = db.Column(db.Integer, db.ForeignKey("course.id"), primary_key=True, doc='课程')
+    stage = db.Column(db.Integer, db.ForeignKey("stage.id"), primary_key=True, doc='阶段')
+    is_delete = db.Column(db.Integer, default=0, doc='课程')
 
 # class QuestionType(db.Model):
 #     """

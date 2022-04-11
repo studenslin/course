@@ -25,6 +25,13 @@ def output_json(data, code=200, headers=None):
     return custom_output_json(data, code, headers)
 
 
+path = os.path.join('../')
+# app私钥
+app_private_key_string = open(path + 'project/pay/private.text').read()
+# 支付宝公钥
+alipay_public_key_string = open(path + 'project/pay/public.text').read()
+
+
 class VipList(Resource):
     """
     展示VIP列表
@@ -34,6 +41,47 @@ class VipList(Resource):
     def get(self):
         vip_list = Vip.query.all()
         return marshal(vip_list, vip_fields)
+
+
+class AlipayBack(Resource):
+    """
+    支付回调
+    """
+
+    @login_required
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('cid')
+        parser.add_argument('order')
+        args = parser.parse_args()
+        order = args.get('order')
+        cid = args.get('cid')
+        uid = g.user_id
+        # 判断订单是否已存在,或已完成支付
+        orders = Orders.query.filter_by(order=order, user=uid).first()
+        if not orders or orders.status == 1:
+            return {'code': 405, 'msg': 'Order already exists or payment has been completed'}
+        alipay = AliPay(
+            appid='',
+            # 默认回调地址
+            app_notify_url=None,
+            app_private_key_string=app_private_key_string,
+            alipay_public_key_string=alipay_public_key_string,
+            sign_type="RSA2",  # RSA 或者 RSA2
+            debug=True  # 默认False
+        )
+        # 支付宝查询交易
+        response = alipay.api_alipay_trade_query(order)
+        if response.get("code") != "10000" or response.get("trade_status") != "TRADE_SUCCESS":
+            return {"code": 405, "message": "开通失败"}
+        # 支付成功，修改支付状态
+        orders.status = str(1)
+        db.session.commit()
+        # TODO
+        """
+        1. 获取用户开通的会员信息
+        2. 修改用户的会员信息
+        """
 
 
 class CreateOrder(Resource):
@@ -49,20 +97,12 @@ class CreateOrder(Resource):
         return {'code': 200, 'order': order}
 
 
-path = os.path.join('../')
-# app私钥
-app_private_key_string = open(path + 'project/pay/private.text').read()
-# 支付宝公钥
-alipay_public_key_string = open(path + 'project/pay/public.text').read()
-
-
 class Alipay(Resource):
     """
     沙箱支付
     """
 
     @login_required
-    # 沙箱支付接口
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('order')
@@ -70,16 +110,20 @@ class Alipay(Resource):
         args = parser.parse_args()
         order = args.get('order')
         price = args.get('price')
-
+        uid = g.user_id
+        #  判断订单是否存在（是否购买）
+        order_lis = Orders.query.filter_by(order=order, user=uid).first()
+        if order_lis or order_lis.status == 1:
+            return {'code': 400, 'msg': 'This order already exists'}
         alipay = AliPay(
             appid="2016102400753303",
             app_notify_url=None,  # 默认回调url
             app_private_key_string=app_private_key_string,
             alipay_public_key_string=alipay_public_key_string,
-            # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥,
             sign_type="RSA2",  # RSA 或者 RSA2
             debug=True  # 默认False
         )
+
         # 调用支付接口，生成支付链接
         # 电脑网站支付，需要跳转到
         order_string = alipay.api_alipay_trade_page_pay(
@@ -91,6 +135,7 @@ class Alipay(Resource):
         )
         # 将这个url复制到浏览器，就会打开支付宝支付页面
         pay_url = "https://openapi.alipaydev.com/gateway.do?" + order_string
+        print(pay_url)
         return {'code': 200, 'data': pay_url}
 
     # 订单入库
@@ -115,11 +160,34 @@ class Alipay(Resource):
         ords.order = order
         ords.pay = price
         ords.total = price
+        ords.record = record
         db.session.add(ords)
         db.session.commit()
         return {'code': 200, 'msg': 'ok'}
 
 
+class VerifyOrder(Resource):
+    """
+    检验订单信息
+    """
+
+    @login_required
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('order')
+        args = parser.parse_args()
+        order = args.get('order')
+        uid = g.user_id
+        print(order, uid)
+        order = Orders.query.filter_by(order=order, user=uid).first()
+        print('1111', order)
+        # if not order or order.status != 0:
+        if order:
+            return {'code': 200, 'msg': 'pay success'}
+        return {'code': 500, 'msg': 'Payment of this order has been completed'}
+
+
 api.add_resource(VipList, '/vip_list')
 api.add_resource(CreateOrder, '/create_order')
 api.add_resource(Alipay, '/alipay')
+api.add_resource(VerifyOrder, '/ver_alipy')

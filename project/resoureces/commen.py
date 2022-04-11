@@ -93,7 +93,7 @@ class CommentsCRUD(Resource):
         course = Course.query.get(cid)
         if course is None:
             return {'code': 400, 'msg': 'Parameter error'}
-        comment_list = Comment.query.filter_by(cid=cid, reply=None).all()
+        comment_list = Comment.query.filter_by(cid=cid, uid=g.user_id).all()
         lis = []
         comments = marshal(comment_list, comment_fields)
         for k in comment_list:

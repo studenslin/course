@@ -9,6 +9,7 @@ from common.utils.middlewares import jwt_authentication
 from project.resoureces.commen import comment_bp
 from project.resoureces.learn import learn_bp
 from project.pay.order import order_bp
+from project.resoureces.stu_path import path_bp
 from project.resoureces.user import demo_bp
 from project.resoureces.courses_type import course_type_bp
 from project.resoureces.course import course_bp
@@ -32,6 +33,7 @@ def create_flask_app(config):
     app.register_blueprint(comment_bp)
     app.register_blueprint(learn_bp)
     app.register_blueprint(order_bp)
+    app.register_blueprint(path_bp)
 
     db.init_app(app)
     cache.init_app(app)
