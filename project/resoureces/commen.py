@@ -8,7 +8,6 @@ import json
 from flask import Blueprint, g
 from flask_restful import Resource, reqparse, Api, marshal, fields
 from common.models.model import Course, User, CourseType, Section, Comment
-
 from common.utils.login_utils import login_required
 from common.models import db
 from common.model_fields.commen_fields import comment_fields

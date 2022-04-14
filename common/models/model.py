@@ -5,6 +5,7 @@
 
 from common.models import db
 from datetime import datetime
+from jieba.analyse.analyzer import ChineseAnalyzer
 
 
 class User(db.Model):
@@ -81,6 +82,8 @@ class Course(db.Model):
     课程表
     """
     __tablename__ = 'course'
+    __searchable__ = ['title', 'desc']
+    __analyzer__ = ChineseAnalyzer()
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(24), doc='课程名称')
     user = db.Column(db.Integer, db.ForeignKey('user.uid'), doc='发布人')

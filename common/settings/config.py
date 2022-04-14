@@ -4,6 +4,9 @@
 # @Software : PyCharm
 import redis
 import pickle
+import os
+
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config(object):
@@ -32,6 +35,10 @@ class Config(object):
     # celery
     CELERY_BROKER_URL = 'redis://127.0.0.1:6379/14'
     CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/15'
+
+    # 设置索引文件存放文件夹位置
+    WHOOSH_BASE = os.path.join(basedir, 'WHOOSH_BASE_INDEX')
+
 
 
 class Redis:

@@ -2,6 +2,7 @@
 # @Author : linyaxuan
 # @File : __init__.py.py
 # @Software : PyCharm
+import flask_whooshalchemyplus
 
 from common.cache import cache
 from common.models import db
@@ -37,8 +38,9 @@ def create_flask_app(config):
 
     db.init_app(app)
     cache.init_app(app)
+
+    flask_whooshalchemyplus.init_app(app)
+
     CORS(app, resources={r"/*/*": {"origins": "*"}})
     Api(app)
     return app
-
-

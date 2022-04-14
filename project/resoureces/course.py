@@ -226,6 +226,48 @@ class CoursersInfo(Resource):
         return {'code': 400, 'msg': 'Parameter error'}
 
 
+class SearchCourse(Resource):
+    """
+    搜素课程
+    """
+
+    def get(self):
+        # show_followed = False
+        #
+        # pagination = Post.query.whoosh_search(keyword).order_by(Post.timestamp.desc()).paginate(
+        #     page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+        #     error_out=False)
+        # posts = pagination.items
+        parser = reqparse.RequestParser()
+        parser.add_argument('q')
+        args = parser.parse_args()
+        search = args.get('q')
+
+        courses = Course.query.whoosh_search(search, like=True, case_sensitive=True,
+                                             fields=['desc', 'title']).order_by(Course.id.desc()).all()
+        return marshal(courses, courses_fields)
+
+
+from common.es.es import ES
+
+
+class Cour(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('q')
+        args = parser.parse_args()
+        search = args.get('q')
+        es = ES(index_name='course')
+        result = es.search(search, count=5)
+        content = []
+        if 'hits' in result:
+            for data in result['hits']['hits']:
+                print('222222222', data)
+                content.append(data.get('_source'))
+        return content
+
+
 api.add_resource(CourseCRUD, '/courses')
 api.add_resource(GetCourse, '/get_courses')
 api.add_resource(CoursersInfo, '/course_info')
+api.add_resource(SearchCourse, '/search')
