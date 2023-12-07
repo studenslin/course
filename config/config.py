@@ -14,7 +14,7 @@ class Config(object):
 
 class DevelopConfig(Config):
     """开发环境下的配置"""
-    DEBUG = True
+    DEBUG = False
 
 
 class ProductConfig(Config):
